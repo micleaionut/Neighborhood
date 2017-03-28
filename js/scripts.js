@@ -1,4 +1,5 @@
 "use strict";
+
 var model = [{
         title: "Tivoli",
         web: "http://www.tivoli.dk",
@@ -64,42 +65,72 @@ var model = [{
             position: new google.maps.LatLng(0, 0)
         })
     }],
-    markers = function(a) {
-        var b = this;
-        b.mapOptions = {
+    markers = function(mark) {
+        var self = this;
+		var clientID = "RGGDNIGMKBHEIYLVZ02LI0KIH2Z4OV1LTEXW1GSSKCPEDWBP";
+		var clientSecret = "GX20DWSTEIBFRFQKCHFQ5HDU3AA2DOMRJ3CJ3NINC5UXCHY4";
+        self.mapOptions = {
             center: new google.maps.LatLng(55.676097, 12.568337),
             zoom: 14
         };
-        var c = document.getElementsByClassName("map-container");
-        b.map = new google.maps.Map(c[0], b.mapOptions), b.info = new google.maps.InfoWindow, b.searchReq = ko.observable(""), b.filter = ko.computed(function() {
-            for (var c = a.length, d = 0; d < c; d++) a[d].marker.setMap(null);
-            var e = [];
-            e = $.grep(a, function(a) {
-                var c = a.title.toLowerCase().indexOf(b.searchReq().toLowerCase());
-                return c > -1
+        var mapContainer = document.getElementsByClassName("map-container");
+        self.map = new google.maps.Map(mapContainer[0], self.mapOptions);
+		self.info = new google.maps.InfoWindow();
+		self.searchReq = ko.observable("");
+		self.filter = ko.computed(function() {
+            for (var len = mark.length, i = 0; i < mark.length; i++) {
+				mark[i].marker.setMap(null);
+			}
+            var arrayMarkers = [];
+            arrayMarkers = $.grep(mark, function(a) {
+                var title = a.title.toLowerCase().indexOf(self.searchReq().toLowerCase());
+                return (title > -1);
             });
-            for (var c = e.length, d = 0; d < c; d++) ! function() {
-                var c = d;
-                e[c].marker.setMap(b.map)
+            for (var len = arrayMarkers.length, i = 0; i < arrayMarkers.length; i++) ! function() {
+                var current = i;
+                arrayMarkers[current].marker.setMap(self.map);
             }();
-            return e
-        }), b.setPosition = function(a) {
-            var b = new google.maps.Geocoder;
-            b.geocode({
-                address: a.address
-            }, function(b, c) {
-                a.marker.position = b[0].geometry.location, a.marker.setAnimation(google.maps.Animation.DROP)
-            })
-        }, b.setDescription = function(c) {
-            google.maps.event.addListener(a[c].marker, "click", function() {
-                b.info.setContent("<div class='text-primary'><strong>" + a[c].title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + a[c].description + "</div><br><a href='" + a[c].web + "'>" + a[c].web + "</a>"), b.info.open(b.map, a[c].marker)
-            })
-        }, b.initialize = function() {
-            for (var c in a) b.setPosition(a[c]), b.setDescription(c)
-        },
-		b.toggle = function(a) {
-      a.marker.setAnimation(google.maps.Animation.BOUNCE); 
-		  }
-    },
-    myMarkers = new markers(model);
-ko.applyBindings(myMarkers), google.maps.event.addDomListener(window, "load", myMarkers.initialize);
+            return arrayMarkers;
+        });
+		self.setPosition = function(position) {
+            var geocod = new google.maps.Geocoder();
+            geocod.geocode({
+                address: position.address
+            }, function(result) {
+                position.marker.position = result[0].geometry.location, position.marker.setAnimation(google.maps.Animation.DROP);
+            });
+        };
+		self.setDescription = function(index) {
+            google.maps.event.addListener(mark[index].marker, "click", function() {
+				var foursquareURL = 'https://api.foursquare.com/v2/venues/search?ll=55.676097,12.568337' + '&query=' + mark[index].title + '&client_id=' + clientID + '&client_secret=' + clientSecret + '&v=20160118' + '&query=' + mark[index].title;
+
+	$.getJSON(foursquareURL).done(function(data) {
+		var results = data.response.venues[0];
+      	self.info.setContent("<div class='text-primary'><strong>" + mark[index].title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + results.location.formattedAddress[0] + " <b> " + results.location.formattedAddress[1] + "</b>" + "</div><br><a href='" + mark[index].web + "'>" + mark[index].web + "</a>");
+				self.info.open(self.map, mark[index].marker);
+	}).fail(function() {
+		alert("There was an error with the Foursquare API call. Please refresh the page and try again to load Foursquare data.");
+});
+                
+				mark[index].marker.setAnimation(google.maps.Animation.BOUNCE);
+				setTimeout(function(){mark[index].marker.setAnimation(null);}, 700);
+            });
+        };
+		self.initialize = function() {
+            for (var current in mark){
+				
+				self.setPosition(mark[current]);
+				self.setDescription(current);
+			}
+        };
+	
+		self.toggle = function(current) {
+      current.marker.setAnimation(google.maps.Animation.BOUNCE);
+	  self.info.setContent("<div class='text-primary'><strong>" + current.title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + current.description + "</div><br><a href='" + current.web + "'>" + current.web + "</a>");
+	  self.info.open(self.map, current.marker);
+	  setTimeout(function(){current.marker.setAnimation(null);}, 700);
+		  };
+    };
+var myMarkers = new markers(model);
+ko.applyBindings(myMarkers);
+google.maps.event.addDomListener(window, "load", myMarkers.initialize);
