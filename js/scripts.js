@@ -106,6 +106,12 @@ var model = [{
 
 	$.getJSON(foursquareURL).done(function(data) {
 		var results = data.response.venues[0];
+		if (typeof results.location.formattedAddress[0] === 'undefined'){
+			results.location.formattedAddress[0] = "";
+		}
+		if (typeof results.location.formattedAddress[1] === 'undefined'){
+			results.location.formattedAddress[1] = "";
+		}
       	self.info.setContent("<div class='text-primary'><strong>" + mark[index].title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + results.location.formattedAddress[0] + " <b> " + results.location.formattedAddress[1] + "</b>" + "</div><br><a href='" + mark[index].web + "'>" + mark[index].web + "</a>");
 				self.info.open(self.map, mark[index].marker);
 	}).fail(function() {
@@ -126,8 +132,21 @@ var model = [{
 	
 		self.toggle = function(current) {
       current.marker.setAnimation(google.maps.Animation.BOUNCE);
-	  self.info.setContent("<div class='text-primary'><strong>" + current.title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + current.description + "</div><br><a href='" + current.web + "'>" + current.web + "</a>");
-	  self.info.open(self.map, current.marker);
+	  var foursquareURL = 'https://api.foursquare.com/v2/venues/search?ll=55.676097,12.568337' + '&query=' + current.title + '&client_id=' + clientID + '&client_secret=' + clientSecret + '&v=20160118' + '&query=' + current.title;
+
+	$.getJSON(foursquareURL).done(function(data) {
+		var results = data.response.venues[0];
+		if (typeof results.location.formattedAddress[0] === 'undefined'){
+			results.location.formattedAddress[0] = "";
+		}
+		if (typeof results.location.formattedAddress[1] === 'undefined'){
+			results.location.formattedAddress[1] = "";
+		}
+      	self.info.setContent("<div class='text-primary'><strong>" + current.title + "</strong><br><br> <div style='margin-top:10px;'><i>Descripton</i></div>" + results.location.formattedAddress[0] + " <b> " + results.location.formattedAddress[1] + "</b>" + "</div><br><a href='" + current.web + "'>" + current.web + "</a>");
+				self.info.open(self.map, current.marker);
+	}).fail(function() {
+		alert("There was an error with the Foursquare API call. Please refresh the page and try again to load Foursquare data.");
+});
 	  setTimeout(function(){current.marker.setAnimation(null);}, 700);
 		  };
     };
