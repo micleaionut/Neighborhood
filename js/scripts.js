@@ -86,6 +86,9 @@ initMap = () => {
 	
 
 };
+mapError = () => {
+  alert("Map error");
+};
   markers = function(mark) {
         var self = this;
 	    info = new google.maps.InfoWindow();
